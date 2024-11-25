@@ -1,0 +1,16 @@
+---
+title: "Projekt"
+output: github_document
+---
+
+#Wczytanie danych i wyświetlenie
+```{r setup, include=FALSE}
+data <- read_csv("apartments_rent_pl_2024_06.csv")
+spec(data)
+```
+
+# Czyszczenie danych
+
+## Odstające obserwacja
+
+## Brakujące obserwacje
