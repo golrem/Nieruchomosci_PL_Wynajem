@@ -7,6 +7,7 @@ output: github_document
 ```{r setup, include=FALSE}
 data <- read_csv("apartments_rent_pl_2024_06.csv")
 spec(data)
+'Test'
 ```
 
 # Czyszczenie danych
