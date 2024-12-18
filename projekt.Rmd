@@ -7,11 +7,44 @@ output: github_document
 ```{r setup, include=FALSE}
 data <- read_csv("apartments_rent_pl_2024_06.csv")
 spec(data)
-'Test'
+
+```
+
+# Brakujące obserwacje
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+vis_dat(data, palette = "cb_safe")
+
+```
+
+```{r setup, include=FALSE}
+vis_miss(data)
 ```
 
 # Czyszczenie danych
+```{r setup, include=FALSE}
+nrow(data[complete.cases(data), ])/nrow(data)*100
+```
+
+
+```{r setup, include=FALSE}
+RULE <- editset(c("squareMeters > 0", "rooms > 0","latitude > 0","buildYear > 0", "price > 0","hasParkingSpace %in% c('yes','no')", "hasBalcony %in% c('yes','no')", "hasElevator %in% c('yes','no')", "hasSecurity %in% c('yes','no')", "hasStorageRoom %in% c('yes','no')" ))
+RULE
+
+```
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = FALSE)
+violated <- violatedEdits(RULE, data)
+summary(violated)
+```
+
+```{r setup, include=TRUE}
+plot(violated)
+```
 
 ## Odstające obserwacja
 
-## Brakujące obserwacje
+```{r setup, include=FALSE}
+```
