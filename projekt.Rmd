@@ -2,49 +2,115 @@
 title: "Projekt"
 output: github_document
 ---
-
-#Wczytanie danych i wyświetlenie
-```{r setup, include=FALSE}
+#Jak nie macie pakietów wklepcie w konsole (po kolei)
+install.packages('tidyverse')
+install.packages('naniar')
+install.packages('visdat')
+install.packages('editrules')
+install.packages('VIM')
+install.packages('validate')
+install.packages('validatetools')
+install.packages('dplyr')
+install.packages('errorlocate')
+install.packages('dlookr')
+#### Przygotowanie bibliotek i wczytanie pliku
+```{r}
+library(tidyverse)
+library(dplyr)
+library(naniar)
+library(visdat)
+library(editrules)
+library(VIM)
+library(validate)
+library(validatetools)
+library(errorlocate)
+library(mice)
+library(dlookr)
+```
+#### Wczytanie danych i wyświetlenie
+```{r}
 data <- read_csv("apartments_rent_pl_2024_06.csv")
 spec(data)
-
 ```
 
-# Brakujące obserwacje
-
-```{r setup, include=TRUE}
-knitr::opts_chunk$set(echo = TRUE)
+#### Walidacja Danych
+```{r}
 vis_dat(data, palette = "cb_safe")
-
 ```
 
-```{r setup, include=FALSE}
+#### NA w danych
+```{r}
+na_counts <- colSums(is.na(data))
+na_columns <- na_counts[na_counts > 0]
+print(na_columns)
+```
+```{r}
 vis_miss(data)
 ```
 
-# Czyszczenie danych
-```{r setup, include=FALSE}
+#### Czyszczenie danych
+```{r}
 nrow(data[complete.cases(data), ])/nrow(data)*100
 ```
 
 
-```{r setup, include=FALSE}
-RULE <- editset(c("squareMeters > 0", "rooms > 0","latitude > 0","buildYear > 0", "price > 0","hasParkingSpace %in% c('yes','no')", "hasBalcony %in% c('yes','no')", "hasElevator %in% c('yes','no')", "hasSecurity %in% c('yes','no')", "hasStorageRoom %in% c('yes','no')" ))
-RULE
-
+```{r}
+rules <- editset(expression(
+  squareMeters > 0, 
+  rooms > 0,
+  latitude > 0,
+  buildYear > 0,
+  price > 0,
+  hasParkingSpace %in% c('yes','no'),
+  hasBalcony %in% c('yes','no'),
+  hasElevator %in% c('yes','no'),
+  hasSecurity %in% c('yes','no'),
+  hasStorageRoom %in% c('yes','no')))
+rules <- simplify_rules(rules)
 ```
 
-```{r setup, include=TRUE}
-knitr::opts_chunk$set(echo = FALSE)
-violated <- violatedEdits(RULE, data)
+```{r}
+violated <- violatedEdits(rules, data)
 summary(violated)
 ```
 
-```{r setup, include=TRUE}
+```{r}
 plot(violated)
 ```
 
-## Odstające obserwacja
-
-```{r setup, include=FALSE}
+```{r}
+VIM::aggr(fixable_data)
 ```
+
+#### Inspekcja brakujących danych
+
+```{r}
+VIM::pbox(data[4:18], pos=1, las=2)
+```
+
+#### Imputacja NA dla kolumn z brakami
+```{r}
+floors<-imputate_na(data, floor, method = "mice")
+summary(floors)
+plot(floors)
+```
+
+```{r}
+floorCount<-imputate_na(data, floorCount, method = "mice")
+summary(floorCount)
+plot(floorCount)
+```
+
+
+```{r}
+buildYear<-imputate_na(data, buildYear, method = "mice")
+summary(buildYear)
+plot(buildYear)
+```
+
+```{r}
+buildYear<-imputate_na(data, buildYear, method = "mice")
+summary(buildYear)
+plot(buildYear)
+```
+
