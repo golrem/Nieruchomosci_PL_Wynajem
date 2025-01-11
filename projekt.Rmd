@@ -40,12 +40,7 @@ vis_dat(data, palette = "cb_safe")
 
 #### NA w danych
 ```{r}
-na_counts <- colSums(is.na(data))
-na_columns <- na_counts[na_counts > 0]
-print(na_columns)
-```
-```{r}
-vis_miss(data)
+gg_miss_var(data)
 ```
 
 #### Czyszczenie danych
@@ -55,39 +50,26 @@ nrow(data[complete.cases(data), ])/nrow(data)*100
 
 
 ```{r}
-rules <- editset(expression(
+rules <- validator(
   squareMeters > 0, 
   rooms > 0,
   latitude > 0,
   buildYear > 0,
   price > 0,
-  hasParkingSpace %in% c('yes','no'),
-  hasBalcony %in% c('yes','no'),
-  hasElevator %in% c('yes','no'),
-  hasSecurity %in% c('yes','no'),
-  hasStorageRoom %in% c('yes','no')))
-rules <- simplify_rules(rules)
-```
+  hasParkingSpace %in% c('yes', 'no'),
+  hasBalcony %in% c('yes', 'no'),
+  hasElevator %in% c('yes', 'no'),
+  hasSecurity %in% c('yes', 'no'),
+  hasStorageRoom %in% c('yes', 'no')
+)
 
+simplified_rules <- simplify_rules(rules)
+
+
+```
 ```{r}
-violated <- violatedEdits(rules, data)
-summary(violated)
+VIM::aggr(data)
 ```
-
-```{r}
-plot(violated)
-```
-
-```{r}
-VIM::aggr(fixable_data)
-```
-
-#### Inspekcja brakujących danych
-
-```{r}
-VIM::pbox(data[4:18], pos=1, las=2)
-```
-
 #### Imputacja NA dla kolumn z brakami
 ```{r}
 floors<-imputate_na(data, floor, method = "mice")
@@ -113,4 +95,63 @@ buildYear<-imputate_na(data, buildYear, method = "mice")
 summary(buildYear)
 plot(buildYear)
 ```
+
+```{r}
+data$floor <- floors
+data$floorCount <- floorCount
+data$buildYear <- buildYear
+
+data$floor <- round(data$floor)
+data$floorCount <- round(data$floorCount)
+data$buildYear <- round(data$buildYear)
+mean <- mean(data$collegeDistance, na.rm = TRUE)
+data$collegeDistance <- ifelse(is.na(data$collegeDistance), mean, data$collegeDistance)
+mean <- mean(data$restaurantDistance, na.rm = TRUE)
+data$restaurantDistance <- ifelse(is.na(data$restaurantDistance), mean, data$restaurantDistance)
+mean <- mean(data$pharmacyDistance, na.rm = TRUE)
+data$pharmacyDistance <- ifelse(is.na(data$pharmacyDistance), mean, data$pharmacyDistance)
+mean <- mean(data$clinicDistance, na.rm = TRUE)
+data$clinicDistance <- ifelse(is.na(data$clinicDistance), mean, data$clinicDistance)
+mean <- mean(data$postOfficeDistance, na.rm = TRUE)
+data$postOfficeDistance <- ifelse(is.na(data$postOfficeDistance), mean, data$postOfficeDistance)
+mean <- mean(data$kindergartenDistance, na.rm = TRUE)
+data$kindergartenDistance <- ifelse(is.na(data$kindergartenDistance), mean, data$kindergartenDistance)
+```
+
+```{r}
+rules <- validator(
+  if (floorCount >= 4) hasElevator == 'yes'
+)
+
+results <- confront(data, rules)
+
+summary(results)
+
+```
+
+```{r}
+data$hasElevator <- ifelse(is.na(data$hasElevator) & data$floorCount > 4, 'yes', ifelse(is.na(data$hasElevator) & data$floorCount <= 4, 'no', data$hasElevator))
+```
+
+```{r}
+
+replace_na_random <- function(column) {
+  na_indices <- which(is.na(column))
+  non_na_values <- column[!is.na(column)]
+  column[na_indices] <- sample(non_na_values, length(na_indices), replace = TRUE)
+  return(column)
+}
+
+
+data$type <- replace_na_random(data$type)
+data$condition <- replace_na_random(data$condition)
+data$buildingMaterial <- replace_na_random(data$buildingMaterial)
+
+
+```
+
+```{r}
+gg_miss_var(data)
+```
+
 
