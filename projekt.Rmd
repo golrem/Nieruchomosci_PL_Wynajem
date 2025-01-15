@@ -84,6 +84,7 @@ plot(floorCount)
 ```
 
 
+
 ```{r}
 buildYear<-imputate_na(data, buildYear, method = "mice")
 summary(buildYear)
@@ -154,4 +155,162 @@ data$buildingMaterial <- replace_na_random(data$buildingMaterial)
 gg_miss_var(data)
 ```
 
+####Wizualizacja danych
+
+Jak nie macie pakietów wklepcie w konsole (po kolei)
+
+install.packages('rnaturalearth')
+install.packages('rnaturalearthdata')
+install.packages('dplyr')
+install.packages('ggplot2')
+install.packages('pheatmap')
+install.packages('tidyr')
+```{r}
+library(dplyr)
+library(ggplot2)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(pheatmap)
+library(tidyr)
+
+```
+
+
+```{r}
+ggplot(data, aes(x = squareMeters)) +
+  geom_histogram(fill = "skyblue4", bins = 100) +
+  labs(title = 'Powierzchnia') +
+  scale_x_continuous(breaks = seq(0, max(data$squareMeters), by = 10))+ theme_minimal()
+```
+
+```{r}
+ggplot(data, aes(x = rooms)) +
+  geom_bar(fill = "skyblue4") +
+  labs(title = 'Liczba pokoi') +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot(data, aes(x = squareMeters, y = price, color = rooms)) + geom_point(alpha = 0.3) + labs(title = "Cena za wynajem vs Powierzchnia", x = "Powierzchnia (m²)", y = "Cena za wynajem") + theme_minimal()
+
+```
+
+
+
+```{r}
+ggplot(data, aes(x = price, fill = condition)) +
+  geom_density(alpha = 0.25) +
+  labs(title = "Gęstość rozkładu cen w zależności od stanu mieszkania",
+       x = "Cena",
+       y = "Gęstość",
+       fill = "Stan mieszkania") +
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(data, aes(x = centreDistance, y = price)) + geom_point(color = "skyblue4", alpha = 0.6) + labs(title = "Cena vs Odległość od centrum", x = "Odległość od centrum (km)", y = "Cena") + theme_minimal()
+
+```
+
+
+
+```{r}
+city_data <- data %>%
+  group_by(city) %>%
+  summarize(
+    num_properties = n(),
+    avg_price = mean(price),
+    latitude = mean(latitude),
+    longitude = mean(longitude)
+  )
+
+poland <- ne_countries(scale = "medium", country = "Poland", returnclass = "sf")
+
+
+ggplot() +
+  geom_sf(data = poland) +
+  geom_point(data = city_data, aes(x = longitude, y = latitude, size = num_properties, color = avg_price), alpha = 0.7) +
+  scale_color_gradient(low = "skyblue", high = "skyblue4", name = "Średnia cena") +
+  scale_size_continuous(name = "Liczba nieruchomości") +
+  geom_text(data = city_data, aes(x = longitude, y = latitude, label = city), 
+            size = 3, color = "black", vjust = -1, hjust = 0.7) +
+  labs(title = "Liczba mieszkań na wynajem i średnia cena najmu w miastach Polski") +
+  theme_void()
+```
+
+
+```{r}
+selected_columns <- c("centreDistance", "schoolDistance", "clinicDistance", 
+                      "postOfficeDistance", "kindergartenDistance", 
+                      "restaurantDistance", "collegeDistance", "pharmacyDistance", "price")
+
+correlation_matrix <- cor(data[selected_columns])
+
+pheatmap(correlation_matrix, 
+         color = colorRampPalette(c("skyblue2", "white", "skyblue4"))(100),
+         display_numbers = TRUE,
+         clustering_method = "complete",
+         main = "Heatmapa korelacji zmiennych")
+
+```
+
+
+```{r}
+
+ggplot(data, aes(x = price)) +
+  geom_density(fill = "skyblue4", alpha = 0.6) +
+  labs(
+    title = "Gęstość rozkładu cen mieszkań",
+    x = "Cena",
+    y = "Gęstość"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+
+```{r}
+grouped_data <- data %>%
+  group_by(city, type) %>%
+  summarise(avg_price = mean(price))
+
+ggplot(grouped_data, aes(x = city, y = avg_price, fill = type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("skyblue2", "lightskyblue1", "skyblue4")) +
+  labs(
+    title = "Średnia cena w podziale na miasto i typ mieszkania",
+    x = "Miasto",
+    y = "Średnia cena",
+    fill = "Typ mieszkania"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+```{r}
+
+long_data <- data %>%
+  select(hasParkingSpace, hasElevator, hasSecurity, hasStorageRoom) %>%
+  pivot_longer(cols = everything(), names_to = "Feature", values_to = "Value")
+
+ggplot(long_data, aes(x = Feature, fill = Value)) +
+  geom_bar(position = "dodge") +
+  scale_fill_manual(values = c("skyblue2", "skyblue4")) +
+  labs(
+    title = "Rozkład cech dla mieszkań",
+    x = "Cechy",
+    y = "Liczba mieszkań",
+    fill = "Wartość"
+  ) +
+  theme_minimal()
+
+
+```
 
