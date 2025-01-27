@@ -26,6 +26,10 @@ library(validatetools)
 library(errorlocate)
 library(mice)
 library(dlookr)
+library(psych)
+library(knitr)
+library(kableExtra)
+library(corrplot)
 ```
 #### Wczytanie danych i wyświetlenie
 ```{r}
@@ -311,6 +315,121 @@ ggplot(long_data, aes(x = Feature, fill = Value)) +
   ) +
   theme_minimal()
 
+
+```
+## Statystyki opisowe
+
+```{r}
+
+raport <-
+  list("Cena" =
+       list("Min"= ~ min(price),
+            "Max"= ~ max(price),
+            "Kwartyl dolny"= ~ quantile(price,0.25),
+            "Mediana"= ~ round(median(price),2),
+            "Kwartyl górny"= ~ quantile(price,0.75),
+            "Średnia"= ~ round(mean(price),2),
+            "Odch. std."= ~ round(sd(price),2),
+            "IQR"= ~ round(iqr(price),2),
+            "Odchylenie ćwiartkowe"= ~ round(iqr(price)/2,2),
+            "Odch. std. w %"= ~ round((sd(price)/mean(price)),2),
+            "Odch. ćwiartkowe w %" = ~ round((iqr(price)/median(price)),2),
+            "Skośność" = ~ round(skew(price),2),
+            "Kurtoza" = ~ round(kurtosi(price),2)
+            ))
+
+
+tabela <- summary_table(data, summaries = raport, by = c("rooms"))
+
+
+tabela <- gsub("&nbsp;", "", tabela)
+
+
+kable(tabela, caption = "Tabela 1. Mieszkania w Polsce - ceny wg liczby pokoi.",
+      col.names = c("Statystyka", "1 pokój", "2 pokoje", "3 pokoje", "4 pokoje", "5 pokoi", "6 pokoi")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "skyblue2") %>%
+  row_spec(1:nrow(tabela), extra_css = "padding-bottom: 15px;")
+
+
+```
+
+```{r}
+
+data$dekada <- cut(data$buildYear, breaks=seq(1900, 2020, by=10), right=FALSE, labels=paste(seq(1900, 2010, by=10), seq(1909, 2019, by=10), sep="-"))
+
+
+raport <-
+  list("Cena" =
+       list("Min"= ~ min(price),
+            "Max"= ~ max(price),
+            "Kwartyl dolny"= ~ quantile(price, 0.25),
+            "Mediana"= ~ round(median(price), 2),
+            "Kwartyl górny"= ~ quantile(price, 0.75),
+            "Średnia"= ~ round(mean(price), 1),
+            "Odch. std."= ~ round(sd(price), 1),
+            "IQR"= ~ round(iqr(price), 2),
+            "Odchylenie ćwiartkowe"= ~ round(iqr(price) / 2, 2),
+            "Odch. std. w %"= ~ round((sd(price) / mean(price)), 2),
+            "Odch. ćwiartkowe w %"= ~ round((iqr(price) / median(price)), 2),
+            "Skośność"= ~ round(skew(price), 2),
+            "Kurtoza"= ~ round(kurtosi(price), 2)
+            ))
+
+
+tabela2 <- summary_table(data, summaries = raport, by = c("dekada"))
+tabela2 <- gsub("&nbsp;", "", tabela2)
+
+kable(tabela2, caption="Tabela 2. Mieszkania w Polsce - ceny wg dekad.",
+             col.names = c("Statystyka", "1900-1909", "1910-1919", "1920-1929", 
+                           "1930-1939", "1940-1949", "1950-1959", "1960-1969",
+                           "1970-1979", "1980-1989", "1990-1999", "2000-2009",
+                           "2010-2019")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "skyblue2") %>%  
+  row_spec(1:nrow(tabela2), extra_css = "padding-bottom: 15px;")  
+
+
+```
+
+```{r}
+
+data$powierzchnia_przedzial <- cut(data$squareMeters, breaks=seq(20, max(data$squareMeters, na.rm=TRUE), by=20), right=FALSE)
+
+raport <-
+  list("Cena" =
+       list("Min"= ~ min(price),
+            "Max"= ~ max(price),
+            "Kwartyl dolny"= ~ quantile(price, 0.25),
+            "Mediana"= ~ round(median(price), 2),
+            "Kwartyl górny"= ~ quantile(price, 0.75),
+            "Średnia"= ~ round(mean(price), 1),
+            "Odch. std."= ~ round(sd(price), 1),
+            "IQR"= ~ round(iqr(price), 2),
+            "Odchylenie ćwiartkowe"= ~ round(iqr(price) / 2, 2),
+            "Odch. std. w %"= ~ round((sd(price) / mean(price)), 2),
+            "Odch. ćwiartkowe w %"= ~ round((iqr(price) / median(price)), 2),
+            "Skośność"= ~ round(skew(price), 2),
+            "Kurtoza"= ~ round(kurtosi(price), 2)
+            ))
+
+
+tabela_m2 <- summary_table(data, summaries = raport, by = c("powierzchnia_przedzial"))
+
+tabela_m2 <- gsub("&nbsp;", "", tabela_m2)
+
+
+kable(tabela_m2, caption = "Tabela 3. Mieszkania w Polsce - cena w poszczególnym metrażu.",
+      col.names = c("Statystyka", "20-40", "40-60", "60-80", 
+                           "80-100", "100-120", "120-140")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "skyblue2") %>%
+  row_spec(1:nrow(tabela), extra_css = "padding-bottom: 15px;")
+```
+## Macierz Koleracji
+```{r}
+numeryczne_kolumny <- select_if(data, is.numeric)
+corrplot(cor(numeryczne_kolumny), method = "number", diag =FALSE)
 
 ```
 
