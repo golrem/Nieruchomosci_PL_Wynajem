@@ -30,6 +30,9 @@ library(psych)
 library(knitr)
 library(kableExtra)
 library(corrplot)
+library(psych)
+library(gtsummary)
+library(summarytools)
 ```
 #### Wczytanie danych i wyświetlenie
 ```{r}
@@ -340,7 +343,6 @@ raport <-
 
 
 tabela <- summary_table(data, summaries = raport, by = c("rooms"))
-
 
 tabela <- gsub("&nbsp;", "", tabela)
 
