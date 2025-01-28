@@ -438,6 +438,7 @@ kable(tabela_m2, caption = "Tabela 3. Mieszkania w Polsce - cena w poszczególny
 numeryczne_kolumny <- select_if(data, is.numeric)
 corrplot(cor(numeryczne_kolumny), method = "number", diag =FALSE)
 
+##Wnioskowanie i testy statystyczne
 # Usunięcie błędnych wartości (np. cena <= 0)
 ```{r}
 df <- df %>% filter(cena > 0)
