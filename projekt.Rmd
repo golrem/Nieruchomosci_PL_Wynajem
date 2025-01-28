@@ -13,6 +13,9 @@ install.packages('validatetools')
 install.packages('dplyr')
 install.packages('errorlocate')
 install.packages('dlookr')
+install.packages("dplyr")
+install.packages("ggplot2")
+
 #### Przygotowanie bibliotek i wczytanie pliku
 ```{r}
 library(tidyverse)
@@ -33,6 +36,8 @@ library(corrplot)
 library(psych)
 library(gtsummary)
 library(summarytools)
+library(dplyr)
+library(ggplot2)
 ```
 #### Wczytanie danych i wyświetlenie
 ```{r}
@@ -433,5 +438,42 @@ kable(tabela_m2, caption = "Tabela 3. Mieszkania w Polsce - cena w poszczególny
 numeryczne_kolumny <- select_if(data, is.numeric)
 corrplot(cor(numeryczne_kolumny), method = "number", diag =FALSE)
 
-```
+# Usunięcie błędnych wartości (np. cena <= 0)
+```{r}
+df <- df %>% filter(cena > 0)
 
+# Uzupełnianie braków za pomocą mediany
+df <- df %>% mutate(powierzchnia = ifelse(is.na(powierzchnia), median(powierzchnia, na.rm = TRUE), powierzchnia))
+
+# Wizualizacja rozkładu cen mieszkań
+hist(df$cena, main = "Rozkład cen mieszkań", xlab = "Cena", col = "lightblue", breaks = 30)
+
+# Wizualizacja zależności między powierzchnią a ceną
+plot(df$powierzchnia, df$cena, main = "Zależność między powierzchnią a ceną", xlab = "Powierzchnia", ylab = "Cena", pch = 19, col = "darkblue")
+
+# Testy statystyczne
+# Test normalności rozkładu cen
+shapiro_test <- shapiro.test(df$cena)
+print(shapiro_test)
+
+# Test t-Studenta dla cen mieszkań z parkingiem i bez
+# Tworzymy zmienną parking_binarny
+# 1 - mieszkania z parkingiem, 0 - bez parkingu
+df$parking_binarny <- ifelse(df$parking == "tak", 1, 0)
+t_test <- t.test(cena ~ parking_binarny, data = df)
+print(t_test)
+
+# Test chi-kwadrat dla zmiennych kategorialnych
+# Zależność między posiadaniem parkingu a liczbą pokoi
+tablica_kontyngencji <- table(df$parking, df$liczba_pokoi)
+chi2_test <- chisq.test(tablica_kontyngencji)
+print(chi2_test)
+
+# Modelowanie
+# Regresja liniowa: jak powierzchnia wpływa na cenę?
+linear_model <- lm(cena ~ powierzchnia, data = df)
+summary(linear_model)
+
+# Wizualizacja modelu liniowego
+plot(df$powierzchnia, df$cena, main = "Model liniowy: cena vs. powierzchnia", xlab = "Powierzchnia", ylab = "Cena", pch = 19, col = "darkgreen")
+abline(linear_model, col = "red", lwd = 2)
