@@ -1,23 +1,6 @@
----
-title: "Projekt"
-output: github_document
----
-#Jak nie macie pakietów wklepcie w konsole (po kolei)
-install.packages('tidyverse')
-install.packages('naniar')
-install.packages('visdat')
-install.packages('editrules')
-install.packages('VIM')
-install.packages('validate')
-install.packages('validatetools')
-install.packages('dplyr')
-install.packages('errorlocate')
-install.packages('dlookr')
-install.packages("dplyr")
-install.packages("ggplot2")
+### **Data Wrangling**
 
-#### Przygotowanie bibliotek i wczytanie pliku
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(dplyr)
 library(naniar)
@@ -38,30 +21,73 @@ library(gtsummary)
 library(summarytools)
 library(dplyr)
 library(ggplot2)
+library(gsubfn)
+library(stats)
+library(nortest)
 ```
-#### Wczytanie danych i wyświetlenie
-```{r}
+
+1.  Wczytanie danych i wyświetlenie
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 data <- read_csv("apartments_rent_pl_2024_06.csv")
 spec(data)
 ```
 
-#### Walidacja Danych
-```{r}
+*Zbiór danych zawiera **8849** obserwacji dotyczących wynajmu mieszkań w polskich miastach, do czynienia mamy ze zmiennymi:*
+
+-   **price**: Cena wynajmu mieszkania,
+-   **city**: Miasto, gdzie znajduje się mieszkanie,
+-   **rooms**: Ilość pokoi,
+-   **squareMeters**: Powierzchnia w metrach kwadratowych,
+-   **floorCount**: Liczba pięter budynku,
+-   **floor**: Piętro mieszkania,
+-   **buildYear**: Rok budowy budynku.
+
+*Również występują zmienne dotyczące odległości obiektów od mieszkania, takie jak:*
+
+-   **schoolDistance**: Odległość od szkoły,
+-   **kindergartenDistance**: Odległość od przedszkole,
+-   **restaurantDistance**: Odległość od restauracji,
+-   **collegeDistance**: Odległość od uczelni,
+-   **pharmacyDistance**: Odległość od apteki.
+
+*Znajdują się jeszcze zmienne opisujące wyposażenie poprzez wartość **yes** lub **no**:*
+
+-   **hasParkingSpace**: Czy obiekt ma parking,
+-   **hasBalcony**: Czy obiekt ma balkon,
+-   **hasElevator**: Czy obiekt ma windę,
+-   **hasSecurity**: Czy obiekt ma ochronę,
+-   **hasStorageRoom**: Czy obiekt ma komórkę lokatorską.
+
+2.  Walidacja Danych
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 vis_dat(data, palette = "cb_safe")
 ```
 
-#### NA w danych
-```{r}
+*Z wykresu ukazanego powyżej, widzimy braki wartości zmiennych poszczególnych obserwacji*
+
+3.  NA w danych
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 gg_miss_var(data)
 ```
 
-#### Czyszczenie danych
-```{r}
+*Największą ilość brakujących wartości widzimy w zmiennych:*
+
+-   **condition**
+-   **buildingMaterial**
+-   **buildYear**
+
+4.  Czyszczenie danych
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 nrow(data[complete.cases(data), ])/nrow(data)*100
 ```
 
+*15% naszych danych zawiera braki*
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 rules <- validator(
   squareMeters > 0, 
   rooms > 0,
@@ -79,37 +105,42 @@ simplified_rules <- simplify_rules(rules)
 
 
 ```
-```{r}
+
+*Niestety nasze reguły nie przyniosły oczekiwanych efektów 🙁*
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 VIM::aggr(data)
 ```
-#### Imputacja NA dla kolumn z brakami
-```{r}
+
+*Wygenerowaliśmy heatmapę zmiennych, aby lepiej ukazać nasze braki* *Następnie wykorzystująć inputację uzupełniliśmy braki*
+
+5.  Imputacja NA dla kolumn z brakami
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 floors<-imputate_na(data, floor, method = "mice")
 summary(floors)
 plot(floors)
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 floorCount<-imputate_na(data, floorCount, method = "mice")
 summary(floorCount)
 plot(floorCount)
 ```
 
-
-
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 buildYear<-imputate_na(data, buildYear, method = "mice")
 summary(buildYear)
 plot(buildYear)
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 buildYear<-imputate_na(data, buildYear, method = "mice")
 summary(buildYear)
 plot(buildYear)
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 data$floor <- floors
 data$floorCount <- floorCount
 data$buildYear <- buildYear
@@ -131,7 +162,9 @@ mean <- mean(data$kindergartenDistance, na.rm = TRUE)
 data$kindergartenDistance <- ifelse(is.na(data$kindergartenDistance), mean, data$kindergartenDistance)
 ```
 
-```{r}
+*Dla zmiennych opisujących odległość od obiektów zastosowaliśmy medianę*
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 rules <- validator(
   if (floorCount >= 4) hasElevator == 'yes'
 )
@@ -142,11 +175,15 @@ summary(results)
 
 ```
 
-```{r}
+*Wprowadziliśmy warunek w którym, jeżeli w budynku jest powyżej 4 kondygnacji, to budynek musi mieć windę*
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 data$hasElevator <- ifelse(is.na(data$hasElevator) & data$floorCount > 4, 'yes', ifelse(is.na(data$hasElevator) & data$floorCount <= 4, 'no', data$hasElevator))
 ```
 
-```{r}
+*Przy pomocy wartości zmiennych w poszczególnych kolumnach, uzupełniliśmy w sposób losowy braki danych w nich występujące*
+
+```{r include=FALSE}
 
 replace_na_random <- function(column) {
   na_indices <- which(is.na(column))
@@ -163,21 +200,15 @@ data$buildingMaterial <- replace_na_random(data$buildingMaterial)
 
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 gg_miss_var(data)
 ```
 
-####Wizualizacja danych
+*Zbiór został uzupełniony z wszelakich braków, co ukazuje powyższy wykres*
 
-Jak nie macie pakietów wklepcie w konsole (po kolei)
+### **Wizualizacja danych**
 
-install.packages('rnaturalearth')
-install.packages('rnaturalearthdata')
-install.packages('dplyr')
-install.packages('ggplot2')
-install.packages('pheatmap')
-install.packages('tidyr')
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
 library(rnaturalearth)
@@ -187,30 +218,44 @@ library(tidyr)
 
 ```
 
+1.  Powierzchnia
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data, aes(x = squareMeters)) +
   geom_histogram(fill = "skyblue4", bins = 100) +
   labs(title = 'Powierzchnia') +
   scale_x_continuous(breaks = seq(0, max(data$squareMeters), by = 10))+ theme_minimal()
 ```
 
-```{r}
+*Powyższy wykres przedstawia rozkład powierzchni mieszkań, gdzie najwięcej mieszkań posiada powierzchnię między 50 - 60 m²*
+
+2.  Liczba Pokoi
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data, aes(x = rooms)) +
   geom_bar(fill = "skyblue4") +
   labs(title = 'Liczba pokoi') +
   theme_minimal()
 ```
 
+*Na wykresie możemy zauważyć, że najwięcej mieszkań jest dwupokojowych*
 
-```{r}
-ggplot(data, aes(x = squareMeters, y = price, color = rooms)) + geom_point(alpha = 0.3) + labs(title = "Cena za wynajem vs Powierzchnia", x = "Powierzchnia (m²)", y = "Cena za wynajem") + theme_minimal()
+3.  Cena za wynajem vs Powierzchnia
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(data, aes(x = squareMeters, y = price)) + 
+  geom_point(alpha = 0.3, color = "skyblue4") + 
+  labs(title = "Cena za wynajem vs Powierzchnia", 
+       x = "Powierzchnia (m²)", 
+       y = "Cena za wynajem") + 
+  theme_minimal()
 ```
 
+*Im większa powierzchnia mieszkania, tym wyższa cena wynajmu.* *Większe powierzchnie mają szerszy zakres cen wynajmu, co oznacza większą różnorodność w cenach dla większych mieszkań.*
 
+4.  Gęstość rozkładu ceny
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data, aes(x = price, fill = condition)) +
   geom_density(alpha = 0.25) +
   labs(title = "Gęstość rozkładu cen w zależności od stanu mieszkania",
@@ -221,14 +266,32 @@ ggplot(data, aes(x = price, fill = condition)) +
 
 ```
 
-```{r}
+-   **Mieszkania premium są droższe:** Ceny mieszkań premium są wyraźnie wyższe niż mieszkań o niższym standardzie.
+
+-   **Większe zróżnicowanie cen premium:** Mieszkania premium mają bardziej rozproszony rozkład cen, co oznacza większą różnorodność w tej kategorii.
+
+-   **Niski standard = niższe ceny:** Większość mieszkań o niższym standardzie skupia się w niższym przedziale cenowym.
+
+-   **Wyraźny podział cen:** Różnica między kategoriami (low i premium) sugeruje wyraźne segmenty rynku mieszkań.
+
+5.  Cena vs Odległość
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data, aes(x = centreDistance, y = price)) + geom_point(color = "skyblue4", alpha = 0.6) + labs(title = "Cena vs Odległość od centrum", x = "Odległość od centrum (km)", y = "Cena") + theme_minimal()
 
 ```
 
+-   **Cena spada wraz z odległością od centrum:** Ogólnie widoczna jest tendencja, że ceny mieszkań maleją, im większa jest odległość od centrum miasta (odległość \> 5 km).
 
+-   **Zróżnicowanie cen bliżej centrum:** W bliskiej odległości od centrum (0–5 km) ceny są bardzo zróżnicowane, z wieloma drogimi mieszkaniami (\>10 000).
 
-```{r}
+-   **Stabilizacja cen w większej odległości:** W odległości powyżej 10 km ceny są bardziej skupione w niższych przedziałach (\<5000), a bardzo drogie mieszkania są rzadkością.
+
+-   **Bliskość centrum ma znaczenie:** Lokalizacja bliżej centrum miasta wyraźnie wpływa na wyższą cenę mieszkań.
+
+6.  Liczba mieszkań na wynajem i średnia cena najmu w miastach Polski
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 city_data <- data %>%
   group_by(city) %>%
   summarize(
@@ -252,8 +315,17 @@ ggplot() +
   theme_void()
 ```
 
+-   **Warszawa dominuje**: ma największą liczbę mieszkań na wynajem oraz najwyższe średnie ceny.
 
-```{r}
+-   **Większe miasta = wyższe ceny** – w miastach takich jak Kraków, Wrocław i Gdańsk ceny są stosunkowo wysokie.
+
+-   **Mniejsze miasta mają niższe ceny** – np. w Radomiu czy Częstochowie ceny wynajmu są znacznie niższe.
+
+-   **Różnice regionalne** – ceny i liczba ofert są wyraźnie zróżnicowane w zależności od miasta.
+
+7.  Heatmapa korelacji zmiennych
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 selected_columns <- c("centreDistance", "schoolDistance", "clinicDistance", 
                       "postOfficeDistance", "kindergartenDistance", 
                       "restaurantDistance", "collegeDistance", "pharmacyDistance", "price")
@@ -268,8 +340,17 @@ pheatmap(correlation_matrix,
 
 ```
 
+-   **Cena (price) ma negatywną korelację z odległością od centrum (-0.15)** – im dalej od centrum, tym niższa cena.
 
-```{r}
+-   **Podobna zależność dotyczy odległości od przedszkola, szkoły i poczty** – im dalej, tym niższa cena, ale korelacje są słabe.
+
+-   **Najsilniejsze dodatnie korelacje występują między różnymi odległościami** – np. odległość od restauracji i apteki (0.43) lub centrum i uczelni (0.57).
+
+-   **Brak silnych zależności między ceną a większością zmiennych** – oznacza to, że inne czynniki mogą mieć większy wpływ na cenę mieszkań.
+
+8.  Gęstość rozkładu cen mieszkań
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 ggplot(data, aes(x = price)) +
   geom_density(fill = "skyblue4", alpha = 0.6) +
@@ -283,9 +364,17 @@ ggplot(data, aes(x = price)) +
 
 ```
 
+-   **Asymetria prawostronna** – większość mieszkań ma ceny poniżej 5000, ale istnieją nieliczne drogie oferty, co powoduje długi prawy ogon.
 
+-   **Najwięcej mieszkań w przedziale 2000-4000** – szczyt rozkładu wskazuje, że większość ofert mieści się w tym zakresie.
 
-```{r}
+-   **Mniej mieszkań w bardzo wysokich cenach** – ceny powyżej 10 000 są rzadkie.
+
+-   **Możliwe wartości odstające** – obecność mieszkań z cenami powyżej 15 000 sugeruje istnienie drogich, ale nietypowych ofert.
+
+9.  Średnia cena w podziale na miasto i typ mieszkania
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 grouped_data <- data %>%
   group_by(city, type) %>%
   summarise(avg_price = mean(price))
@@ -294,19 +383,21 @@ ggplot(grouped_data, aes(x = city, y = avg_price, fill = type)) +
   geom_bar(stat = "identity", position = "dodge") +
   scale_fill_manual(values = c("skyblue2", "lightskyblue1", "skyblue4")) +
   labs(
-    title = "Średnia cena w podziale na miasto i typ mieszkania",
+    title = "Średnia cena w podziale na miasto i typ budynku",
     x = "Miasto",
     y = "Średnia cena",
-    fill = "Typ mieszkania"
+    fill = "Typ budynku"
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
+*Warszawa dominuje w trzech kategoriach typu budynku, pod względem średniej ceny wynajmu mieszkania.*
 
+10. Rozkład cech dla mieszkań
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 long_data <- data %>%
   select(hasParkingSpace, hasElevator, hasSecurity, hasStorageRoom) %>%
@@ -325,9 +416,14 @@ ggplot(long_data, aes(x = Feature, fill = Value)) +
 
 
 ```
-## Statystyki opisowe
 
-```{r}
+*Większość mieszkań nie posiada ochrony i komórki lokatorskiej*
+
+### Statystyki opisowe
+
+1.  Mieszkania w Polsce - ceny wg liczby pokoi.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 raport <-
   list("Cena" =
@@ -338,19 +434,20 @@ raport <-
             "Kwartyl górny"= ~ quantile(price,0.75),
             "Średnia"= ~ round(mean(price),2),
             "Odch. std."= ~ round(sd(price),2),
-            "IQR"= ~ round(iqr(price),2),
-            "Odchylenie ćwiartkowe"= ~ round(iqr(price)/2,2),
+            "IQR"= ~ round(IQR(price),2),
+            "Odchylenie ćwiartkowe"= ~ round(IQR(price)/2,2),
             "Odch. std. w %"= ~ round((sd(price)/mean(price)),2),
-            "Odch. ćwiartkowe w %" = ~ round((iqr(price)/median(price)),2),
+            "Odch. ćwiartkowe w %" = ~ round((IQR(price)/median(price)),2),
             "Skośność" = ~ round(skew(price),2),
             "Kurtoza" = ~ round(kurtosi(price),2)
             ))
 
 
 tabela <- summary_table(data, summaries = raport, by = c("rooms"))
+tabela <- tabela[-1,] 
 
 tabela <- gsub("&nbsp;", "", tabela)
-
+tabela <- gsub("~", "", tabela)
 
 kable(tabela, caption = "Tabela 1. Mieszkania w Polsce - ceny wg liczby pokoi.",
       col.names = c("Statystyka", "1 pokój", "2 pokoje", "3 pokoje", "4 pokoje", "5 pokoi", "6 pokoi")) %>%
@@ -360,6 +457,14 @@ kable(tabela, caption = "Tabela 1. Mieszkania w Polsce - ceny wg liczby pokoi.",
 
 
 ```
+
+-   **Zmienność cen**: *Ceny wynajmu są bardzo zróżnicowane, od 415 zł za jednopokojowe mieszkanie do 19 500 zł za mieszkanie z 5 pokojami.*
+
+-   **Średnia cena**: *Średnia cena wynajmu rośnie wraz z liczbą pokoi, od 2 185,95 zł za jednopokojowe do 11 657 zł za sześcio pokojowe mieszkanie.*
+
+-   **Rozkłady**: *Ceny mieszkań większych są bardziej zróżnicowane (wyższe odchylenie standardowe i IQR), a rozkłady są przeważnie prawostronnie skośne.*
+
+2.  Mieszkania w Polsce - ceny wg dekad
 
 ```{r}
 
@@ -375,18 +480,20 @@ raport <-
             "Kwartyl górny"= ~ quantile(price, 0.75),
             "Średnia"= ~ round(mean(price), 1),
             "Odch. std."= ~ round(sd(price), 1),
-            "IQR"= ~ round(iqr(price), 2),
-            "Odchylenie ćwiartkowe"= ~ round(iqr(price) / 2, 2),
+            "IQR"= ~ round(IQR(price), 2),
+            "Odchylenie ćwiartkowe"= ~ round(IQR(price) / 2, 2),
             "Odch. std. w %"= ~ round((sd(price) / mean(price)), 2),
-            "Odch. ćwiartkowe w %"= ~ round((iqr(price) / median(price)), 2),
+            "Odch. ćwiartkowe w %"= ~ round((IQR(price) / median(price)), 2),
             "Skośność"= ~ round(skew(price), 2),
             "Kurtoza"= ~ round(kurtosi(price), 2)
             ))
 
 
 tabela2 <- summary_table(data, summaries = raport, by = c("dekada"))
-tabela2 <- gsub("&nbsp;", "", tabela2)
+tabela2 <- tabela2[-1,] 
 
+tabela2 <- gsub("&nbsp;", "", tabela2)
+tabela2 <- gsub("~", "", tabela2)
 kable(tabela2, caption="Tabela 2. Mieszkania w Polsce - ceny wg dekad.",
              col.names = c("Statystyka", "1900-1909", "1910-1919", "1920-1929", 
                            "1930-1939", "1940-1949", "1950-1959", "1960-1969",
@@ -399,7 +506,15 @@ kable(tabela2, caption="Tabela 2. Mieszkania w Polsce - ceny wg dekad.",
 
 ```
 
-```{r}
+-   **Zmienność cen**: *Ceny wynajmu mieszkań z różnych dekad wahają się od 415 zł do 19 500 zł.*
+
+-   **Średnia cena**: *Średnie ceny wynajmu rosną na przestrzeni dekad, np. od 3 953,5 zł (1900-1909) do 4 724,8 zł (1910-1919).*
+
+-   **Rozkłady**: *Ceny są bardziej zróżnicowane w starszych dekadach (wyższe odchylenie standardowe i IQR). Rozkłady cen są przeważnie prawostronnie skośne (większe wartości Skośności).*
+
+3.  Mieszkania w Polsce - cena w poszczególnym metrażu.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 data$powierzchnia_przedzial <- cut(data$squareMeters, breaks=seq(20, max(data$squareMeters, na.rm=TRUE), by=20), right=FALSE)
 
@@ -412,10 +527,10 @@ raport <-
             "Kwartyl górny"= ~ quantile(price, 0.75),
             "Średnia"= ~ round(mean(price), 1),
             "Odch. std."= ~ round(sd(price), 1),
-            "IQR"= ~ round(iqr(price), 2),
-            "Odchylenie ćwiartkowe"= ~ round(iqr(price) / 2, 2),
+            "IQR"= ~ round(IQR(price), 2),
+            "Odchylenie ćwiartkowe"= ~ round(IQR(price) / 2, 2),
             "Odch. std. w %"= ~ round((sd(price) / mean(price)), 2),
-            "Odch. ćwiartkowe w %"= ~ round((iqr(price) / median(price)), 2),
+            "Odch. ćwiartkowe w %"= ~ round((IQR(price) / median(price)), 2),
             "Skośność"= ~ round(skew(price), 2),
             "Kurtoza"= ~ round(kurtosi(price), 2)
             ))
@@ -423,7 +538,10 @@ raport <-
 
 tabela_m2 <- summary_table(data, summaries = raport, by = c("powierzchnia_przedzial"))
 
+tabela_m2 <- tabela_m2[-1,] 
+
 tabela_m2 <- gsub("&nbsp;", "", tabela_m2)
+tabela_m2 <- gsub("~", "", tabela_m2)
 
 
 kable(tabela_m2, caption = "Tabela 3. Mieszkania w Polsce - cena w poszczególnym metrażu.",
@@ -433,49 +551,101 @@ kable(tabela_m2, caption = "Tabela 3. Mieszkania w Polsce - cena w poszczególny
   row_spec(0, bold = TRUE, color = "white", background = "skyblue2") %>%
   row_spec(1:nrow(tabela), extra_css = "padding-bottom: 15px;")
 ```
-## Macierz Koleracji
-```{r}
-numeryczne_kolumny <- select_if(data, is.numeric)
+
+-   **Zmienność cen**: *Ceny wynajmu wzrastają wraz ze zwiększaniem się powierzchni mieszkań, od 415 zł (20-40 m²) do 19 000 zł (120-140 m²).*
+
+-   **Średnia cena**: *Średnie ceny wynajmu rosną wraz z powierzchnią mieszkań, od 2 402,2 zł (20-40 m²) do 10 149 zł (120-140 m²).*
+
+-   **Rozkłady**: *Ceny wynajmu większych mieszkań są bardziej zróżnicowane (wyższe odchylenie standardowe i IQR), a rozkłady cen mają tendencję do prawostronnej skośności.*
+
+### Macierz Koleracji
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+numeryczne_kolumny <- select_if(data, is.numeric) 
 corrplot(cor(numeryczne_kolumny), method = "number", diag =FALSE)
+```
 
-#Wnioskowanie i testy statystyczne
+-   **Silne korelacje**:
 
-# Usunięcie błędnych wartości (np. cena <= 0)
-```{r}
-df <- df %>% filter(cena > 0)
+*Metry kwadratowe wykazują silną pozytywną korelację z ceną, co oznacza, że większa powierzchnia mieszkania zazwyczaj wiąże się z wyższą ceną.*
 
-# Uzupełnianie braków za pomocą mediany
-df <- df %>% mutate(powierzchnia = ifelse(is.na(powierzchnia), median(powierzchnia, na.rm = TRUE), powierzchnia))
+*Liczba pokoi również ma znaczący wpływ na cenę, z dodatnią korelacją.*
 
-# Wizualizacja rozkładu cen mieszkań
-hist(df$cena, main = "Rozkład cen mieszkań", xlab = "Cena", col = "lightblue", breaks = 30)
+-   **Słabe korelacje**:
 
-# Wizualizacja zależności między powierzchnią a ceną
-plot(df$powierzchnia, df$cena, main = "Zależność między powierzchnią a ceną", xlab = "Powierzchnia", ylab = "Cena", pch = 19, col = "darkblue")
+*Korelacje między ceną a piętrem, na którym znajduje się mieszkanie, są słabe, co sugeruje, że piętro ma mniejszy wpływ na cenę.*
 
-# Testy statystyczne
-# Test normalności rozkładu cen
-shapiro_test <- shapiro.test(df$cena)
-print(shapiro_test)
+*Odległość do punktów zainteresowania, takich jak szkoły czy sklepy, ma niewielki wpływ na cenę.*
 
-# Test t-Studenta dla cen mieszkań z parkingiem i bez
-# Tworzymy zmienną parking_binarny
-# 1 - mieszkania z parkingiem, 0 - bez parkingu
-df$parking_binarny <- ifelse(df$parking == "tak", 1, 0)
-t_test <- t.test(cena ~ parking_binarny, data = df)
+### *Testy statystyczne*
+
+1.  Test normalności rozkładu cen Andersona-Darlinga
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Darling <- ad.test(data$price)
+print(Darling)
+```
+
+*Przy tak niskiej wartości p, możemy odrzucić hipotezę zerową o normalności rozkładu danych (cen).*
+
+2.  Test t-Studenta dla cen mieszkań z parkingiem i bez \# Tworzymy zmienną parking_binarny \# 1 - mieszkania z parkingiem, 0 - bez parkingu
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+data$parking_binarny <- ifelse(data$hasParkingSpace == "yes", 1, 0)
+t_test <- t.test(price ~ parking_binarny, data = data)
 print(t_test)
+```
 
-# Test chi-kwadrat dla zmiennych kategorialnych
-# Zależność między posiadaniem parkingu a liczbą pokoi
-tablica_kontyngencji <- table(df$parking, df$liczba_pokoi)
+-   **Statystyka testu (t)**: Wynosi -7,1377, co sugeruje istotną różnicę między średnimi cen w dwóch grupach (z i bez parkingu).
+
+-   **Wartość p (p-value)**: Jest bardzo niska (1,039e-12), co oznacza, że różnica między grupami jest statystycznie istotna.
+
+-   **Przedział ufności 95%**: Oznacza, że rzeczywista różnica średnich cen pomiędzy grupami mieści się w przedziale od -461,1609 do -262,4331 zł.
+
+-   **Średnie ceny**: Średnia cena wynajmu bez parkingu to 3 555,366 zł, a z parkingiem to 3 917,163 zł.
+
+3.  Test chi-kwadrat dla zmiennych kategorialnych i Zależność między posiadaniem parkingu a liczbą pokoi
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tablica_kontyngencji <- table(data$parking_binarny, data$rooms)
 chi2_test <- chisq.test(tablica_kontyngencji)
 print(chi2_test)
+```
 
-# Modelowanie
-# Regresja liniowa: jak powierzchnia wpływa na cenę?
-linear_model <- lm(cena ~ powierzchnia, data = df)
+*Istnieje istotna zależność między posiadaniem parkingu a liczbą pokoi w mieszkaniach. To oznacza, że posiadanie parkingu jest związane z liczbą pokoi w sposób statystycznie istotny.*
+
+### **Modelowanie**
+
+1.  Regresja liniowa: jak powierzchnia wpływa na cenę?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+linear_model <- lm(price ~ squareMeters, data = data)
 summary(linear_model)
+```
 
-# Wizualizacja modelu liniowego
-plot(df$powierzchnia, df$cena, main = "Model liniowy: cena vs. powierzchnia", xlab = "Powierzchnia", ylab = "Cena", pch = 19, col = "darkgreen")
+*Powierzchnia mieszkania (squareMeters) jest istotnym predyktorem ceny (price), a model regresji liniowej dobrze wyjaśnia zmienność cen.*
+
+2.  Wizualizacja modelu liniowego
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+plot(data$squareMeters, data$price, main = "Model liniowy: cena vs. powierzchnia", xlab = "Powierzchnia", ylab = "Cena", pch = 19, col = "darkgreen") +
 abline(linear_model, col = "red", lwd = 2)
+```
+
+### **Wnioski Końcowe**
+
+1.  **Mieszkania premium**: Są znacznie droższe i mają bardziej zróżnicowany rozkład cen, co odzwierciedla różnorodność w tej kategorii.
+
+2.  **Niski standard**: Mieszkania o niższym standardzie mają niższe ceny, głównie skupione w niższym przedziale cenowym.
+
+3.  **Podział cenowy**: Istnieje wyraźny podział między mieszkaniami premium a tymi o niższym standardzie, co sugeruje segmentację rynku.
+
+4.  **Cena a odległość od centrum**: Ceny mieszkań spadają wraz z rosnącą odległością od centrum miasta. Bliżej centrum (0-5 km) ceny są bardzo zróżnicowane, podczas gdy dalej (powyżej 10 km) ceny są bardziej skupione w niższych przedziałach.
+
+5.  **Znaczenie lokalizacji**: Mieszkania bliżej centrum mają wyższe ceny. Warszawa wyróżnia się największą liczbą mieszkań na wynajem oraz najwyższymi średnimi cenami. W większych miastach, takich jak Kraków, Wrocław i Gdańsk, ceny również są wysokie, podczas gdy w mniejszych miastach (np. Radom, Częstochowa) ceny są znacznie niższe.
+
+6.  **Korelacje cen**: Cena ma negatywną korelację z odległością od centrum oraz punktów zainteresowania (np. przedszkola, szkoły). Istnieją także pozytywne korelacje między różnymi odległościami (np. odległość od restauracji i apteki).
+
+7.  **Rozkłady cen**: Rozkłady cen mieszkań są przeważnie prawostronnie skośne, z większością mieszkań w przedziale 2000-4000 zł i rzadkimi, bardzo drogimi ofertami powyżej 10 000 zł. Możliwe są wartości odstające powyżej 15 000 zł.
+
+8.  **Dodatkowe informacje**: Warszawa dominuje w trzech kategoriach typu budynku pod względem średniej ceny wynajmu. Większość mieszkań nie posiada ochrony ani komórki lokatorskiej.
