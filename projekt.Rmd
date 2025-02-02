@@ -1,6 +1,11 @@
+---
+title: "Projekt zespołowy"
+author: "Remigiusz Gołębiewski, Arkadiusz Chmiel, Patrycja Lutostańska, Łucja Ciołkiewicz"
+---
+
 ### **Data Wrangling**
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(dplyr)
 library(naniar)
@@ -24,13 +29,15 @@ library(ggplot2)
 library(gsubfn)
 library(stats)
 library(nortest)
+library(qwraps2)
+library(knitr)
 ```
 
 1.  Wczytanie danych i wyświetlenie
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 data <- read_csv("apartments_rent_pl_2024_06.csv")
-spec(data)
+kable(data[1:100,1:5])
 ```
 
 *Zbiór danych zawiera **8849** obserwacji dotyczących wynajmu mieszkań w polskich miastach, do czynienia mamy ze zmiennymi:*
@@ -466,7 +473,7 @@ kable(tabela, caption = "Tabela 1. Mieszkania w Polsce - ceny wg liczby pokoi.",
 
 2.  Mieszkania w Polsce - ceny wg dekad
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 data$dekada <- cut(data$buildYear, breaks=seq(1900, 2020, by=10), right=FALSE, labels=paste(seq(1900, 2010, by=10), seq(1909, 2019, by=10), sep="-"))
 
